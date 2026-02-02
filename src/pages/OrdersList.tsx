@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useSelector } from 'react-redux'
+import { useSelector, shallowEqual } from 'react-redux'
 import type { Order, City, OrderStatus, RiskLevel } from '../types/order'
 import type { RootState } from '../store/store'
 import { formatEta, formatDateTime } from '../utils/format'
@@ -13,7 +13,7 @@ type SortDirection = 'asc' | 'desc'
 
 export default function OrdersList() {
   const navigate = useNavigate()
-  const incidents = useSelector((state: RootState) => state.incidents)
+  const incidents = useSelector((state: RootState) => state.incidents, shallowEqual)
   const orders = useSelector((state: RootState) => state.orders.orders)
   const [cityFilter, setCityFilter] = useState<string>('All Cities')
   const [statusFilter, setStatusFilter] = useState<string>('All Status')
@@ -52,7 +52,7 @@ export default function OrdersList() {
 
       return true
     })
-  }, [cityFilter, statusFilter, riskFilter])
+  }, [ordersWithIncidents, cityFilter, statusFilter, riskFilter])
 
   // Sort orders
   const sortedOrders = useMemo(() => {

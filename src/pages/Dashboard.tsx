@@ -2,6 +2,8 @@ import { useSelector } from 'react-redux'
 import type { RootState } from '../store/store'
 import { getSystemMode } from '../utils/systemMode'
 import { applyIncidentsToOrders, calculateDelayStats } from '../utils/incidentEffects'
+import { formatEta } from '../utils/format'
+import NorthIslandMap from '../components/NorthIslandMap'
 
 export default function Dashboard() {
   const incidents = useSelector((state: RootState) => state.incidents)
@@ -54,7 +56,7 @@ export default function Dashboard() {
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <h3 className="text-sm font-medium text-gray-500 mb-2">Avg Delay</h3>
           <p className="text-3xl font-bold text-gray-900">
-            {delayStats.avgDelayMinutes}m
+            {formatEta(delayStats.avgDelayMinutes)}
           </p>
         </div>
 
@@ -66,45 +68,54 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Current Mode</h2>
-        <span
-          className={`inline-block px-4 py-2 rounded-lg font-medium ${getModeColor()}`}
-        >
-          {systemMode}
-        </span>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            Recent Incidents
+          </h2>
+          {systemMode === 'Normal' ? (
+            <p className="text-gray-500">No recent incidents</p>
+          ) : (
+            <div className="space-y-2">
+              {incidents.rain.active && (
+                <p className="text-sm text-gray-600">
+                  Heavy Rain ({incidents.rain.severity})
+                </p>
+              )}
+              {incidents.wind.active && (
+                <p className="text-sm text-gray-600">
+                  Strong Wind ({incidents.wind.severity})
+                </p>
+              )}
+              {incidents.roadClosure.active && (
+                <p className="text-sm text-gray-600">
+                  Road Closure ({incidents.roadClosure.severity})
+                </p>
+              )}
+              {incidents.network.active && (
+                <p className="text-sm text-gray-600">
+                  Network {incidents.network.level}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Current Mode</h2>
+          <span
+            className={`inline-block px-4 py-2 rounded-lg font-medium ${getModeColor()}`}
+          >
+            {systemMode}
+          </span>
+        </div>
       </div>
 
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mt-6">
         <h2 className="text-xl font-semibold text-gray-900 mb-4">
-          Recent Incidents
+          North Island Delivery Routes
         </h2>
-        {systemMode === 'Normal' ? (
-          <p className="text-gray-500">No recent incidents</p>
-        ) : (
-          <div className="space-y-2">
-            {incidents.rain.active && (
-              <p className="text-sm text-gray-600">
-                Heavy Rain ({incidents.rain.severity})
-              </p>
-            )}
-            {incidents.wind.active && (
-              <p className="text-sm text-gray-600">
-                Strong Wind ({incidents.wind.severity})
-              </p>
-            )}
-            {incidents.roadClosure.active && (
-              <p className="text-sm text-gray-600">
-                Road Closure ({incidents.roadClosure.severity})
-              </p>
-            )}
-            {incidents.network.active && (
-              <p className="text-sm text-gray-600">
-                Network {incidents.network.level}
-              </p>
-            )}
-          </div>
-        )}
+        <NorthIslandMap />
       </div>
     </div>
   )
