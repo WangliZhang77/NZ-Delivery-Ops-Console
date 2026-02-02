@@ -1,8 +1,9 @@
 import { configureStore } from '@reduxjs/toolkit'
+import incidentsReducer from './incidentsSlice'
 
 export const store = configureStore({
   reducer: {
-    // Reducers will be added here
+    incidents: incidentsReducer,
   },
 })
 
