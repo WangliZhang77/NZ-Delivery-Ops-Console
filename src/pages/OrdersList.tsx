@@ -1,8 +1,11 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useSelector } from 'react-redux'
 import { mockOrders } from '../mock/data'
 import type { Order, City, OrderStatus, RiskLevel } from '../types/order'
+import type { RootState } from '../store/store'
 import { formatEta, formatDateTime } from '../utils/format'
+import { applyIncidentsToOrders } from '../utils/incidentEffects'
 import StatusBadge from '../components/StatusBadge'
 import RiskBadge from '../components/RiskBadge'
 
@@ -11,15 +14,21 @@ type SortDirection = 'asc' | 'desc'
 
 export default function OrdersList() {
   const navigate = useNavigate()
+  const incidents = useSelector((state: RootState) => state.incidents)
   const [cityFilter, setCityFilter] = useState<string>('All Cities')
   const [statusFilter, setStatusFilter] = useState<string>('All Status')
   const [riskFilter, setRiskFilter] = useState<string>('All Risk')
   const [sortField, setSortField] = useState<SortField>(null)
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
 
+  // Apply incident effects to orders
+  const ordersWithIncidents = useMemo(() => {
+    return applyIncidentsToOrders(mockOrders, incidents)
+  }, [incidents])
+
   // Filter orders
   const filteredOrders = useMemo(() => {
-    return mockOrders.filter((order) => {
+    return ordersWithIncidents.filter((order) => {
       // City filter: match fromCity or toCity
       if (cityFilter !== 'All Cities') {
         if (order.fromCity !== cityFilter && order.toCity !== cityFilter) {
@@ -231,7 +240,7 @@ export default function OrdersList() {
       </div>
 
       <div className="mt-4 text-sm text-gray-500">
-        Showing {sortedOrders.length} of {mockOrders.length} orders
+        Showing {sortedOrders.length} of {ordersWithIncidents.length} orders
       </div>
     </div>
   )

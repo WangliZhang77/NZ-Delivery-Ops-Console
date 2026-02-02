@@ -1,5 +1,8 @@
 import { useParams, Link } from 'react-router-dom'
-import { findOrderById } from '../mock/data'
+import { useSelector } from 'react-redux'
+import { mockOrders } from '../mock/data'
+import type { RootState } from '../store/store'
+import { applyIncidentsToOrders } from '../utils/incidentEffects'
 import { generateStatusHistory } from '../utils/timeline'
 import { formatEta, formatDateTime } from '../utils/format'
 import StatusBadge from '../components/StatusBadge'
@@ -8,6 +11,10 @@ import Timeline from '../components/Timeline'
 
 export default function OrderDetail() {
   const { id } = useParams()
+  const incidents = useSelector((state: RootState) => state.incidents)
+  
+  // Apply incident effects to get adjusted orders
+  const ordersWithIncidents = applyIncidentsToOrders(mockOrders, incidents)
   
   if (!id) {
     return (
@@ -26,7 +33,7 @@ export default function OrderDetail() {
     )
   }
 
-  const order = findOrderById(id)
+  const order = ordersWithIncidents.find((o) => o.id === id)
   
   if (!order) {
     return (

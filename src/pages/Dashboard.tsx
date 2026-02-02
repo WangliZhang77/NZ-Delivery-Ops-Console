@@ -1,10 +1,21 @@
 import { useSelector } from 'react-redux'
 import type { RootState } from '../store/store'
 import { getSystemMode } from '../utils/systemMode'
+import { mockOrders } from '../mock/data'
+import { applyIncidentsToOrders, calculateDelayStats } from '../utils/incidentEffects'
 
 export default function Dashboard() {
   const incidents = useSelector((state: RootState) => state.incidents)
   const systemMode = getSystemMode(incidents)
+
+  // Apply incident effects and calculate stats
+  const ordersWithIncidents = applyIncidentsToOrders(mockOrders, incidents)
+  const delayStats = calculateDelayStats(ordersWithIncidents)
+  
+  // Count active deliveries (orders not delivered or cancelled)
+  const activeDeliveries = ordersWithIncidents.filter(
+    (order) => order.status !== 'Delivered' && order.status !== 'Cancelled'
+  ).length
 
   const getModeColor = () => {
     switch (systemMode) {
@@ -28,19 +39,23 @@ export default function Dashboard() {
           <h3 className="text-sm font-medium text-gray-500 mb-2">
             Active Deliveries
           </h3>
-          <p className="text-3xl font-bold text-gray-900">--</p>
+          <p className="text-3xl font-bold text-gray-900">{activeDeliveries}</p>
         </div>
 
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <h3 className="text-sm font-medium text-gray-500 mb-2">
             Delayed Orders
           </h3>
-          <p className="text-3xl font-bold text-orange-600">--</p>
+          <p className="text-3xl font-bold text-orange-600">
+            {delayStats.delayedCount}
+          </p>
         </div>
 
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <h3 className="text-sm font-medium text-gray-500 mb-2">Avg Delay</h3>
-          <p className="text-3xl font-bold text-gray-900">--</p>
+          <p className="text-3xl font-bold text-gray-900">
+            {delayStats.avgDelayMinutes}m
+          </p>
         </div>
 
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
