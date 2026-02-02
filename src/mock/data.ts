@@ -66,3 +66,8 @@ export function generateMockOrders(count: number = 35): Order[] {
 
 // Export a default set of orders
 export const mockOrders: Order[] = generateMockOrders(35)
+
+// Find order by id
+export function findOrderById(id: string): Order | undefined {
+  return mockOrders.find((order) => order.id === id)
+}
