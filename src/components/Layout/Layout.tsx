@@ -1,6 +1,7 @@
 import { ReactNode, useState } from 'react'
 import TopBar from './TopBar'
 import Sidebar from './Sidebar'
+import ToastContainer from '../ToastContainer'
 
 interface LayoutProps {
   children: ReactNode
@@ -24,6 +25,7 @@ export default function Layout({ children }: LayoutProps) {
           {children}
         </main>
       </div>
+      <ToastContainer />
     </div>
   )
 }

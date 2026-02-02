@@ -3,8 +3,13 @@ import { createRoot } from 'react-dom/client'
 import { Provider } from 'react-redux'
 import { BrowserRouter } from 'react-router-dom'
 import { store } from './store/store'
+import { setOrders } from './store/ordersSlice'
+import { mockOrders } from './mock/data'
 import App from './App'
 import './style.css'
+
+// Initialize orders in Redux store
+store.dispatch(setOrders(mockOrders))
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

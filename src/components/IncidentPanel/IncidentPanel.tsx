@@ -1,4 +1,5 @@
 import { useDispatch, useSelector } from 'react-redux'
+import { useState } from 'react'
 import type { RootState } from '../../store/store'
 import {
   toggleRain,
@@ -11,6 +12,7 @@ import {
   setNetworkLevel,
   recoverAll,
 } from '../../store/incidentsSlice'
+import { recoverAndSync } from '../../utils/recover'
 import type { Severity, NetworkLevel } from '../../types/incident'
 
 interface IncidentPanelProps {
@@ -20,6 +22,8 @@ interface IncidentPanelProps {
 export default function IncidentPanel({ onClose }: IncidentPanelProps) {
   const dispatch = useDispatch()
   const incidents = useSelector((state: RootState) => state.incidents)
+  const queue = useSelector((state: RootState) => state.queue)
+  const [isRecovering, setIsRecovering] = useState(false)
 
   const handleSeverityChange = (
     type: 'rain' | 'wind' | 'roadClosure',
@@ -42,9 +46,24 @@ export default function IncidentPanel({ onClose }: IncidentPanelProps) {
     dispatch(setNetworkLevel(level))
   }
 
-  const handleRecover = () => {
-    dispatch(recoverAll())
-    // TODO: Add recovery logic here
+  const handleRecover = async () => {
+    setIsRecovering(true)
+    try {
+      // Recover incidents
+      dispatch(recoverAll())
+      
+      // Sync queued actions
+      const result = await recoverAndSync()
+      
+      // Show success message
+      alert(
+        `Recovery complete! Synced ${result.syncedCount} actions, ${result.failedCount} failed.`
+      )
+    } catch (error) {
+      alert('Recovery failed. Please try again.')
+    } finally {
+      setIsRecovering(false)
+    }
   }
 
   return (
@@ -213,9 +232,10 @@ export default function IncidentPanel({ onClose }: IncidentPanelProps) {
           <div className="pt-4 border-t border-gray-200">
             <button
               onClick={handleRecover}
-              className="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium"
+              disabled={isRecovering || queue.actions.filter(a => a.status === 'Queued').length === 0}
+              className="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
-              Recover
+              {isRecovering ? 'Recovering...' : `Recover (${queue.actions.filter(a => a.status === 'Queued').length} queued})`}
             </button>
           </div>
         </div>

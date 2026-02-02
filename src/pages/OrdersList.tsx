@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
-import { mockOrders } from '../mock/data'
 import type { Order, City, OrderStatus, RiskLevel } from '../types/order'
 import type { RootState } from '../store/store'
 import { formatEta, formatDateTime } from '../utils/format'
@@ -15,6 +14,7 @@ type SortDirection = 'asc' | 'desc'
 export default function OrdersList() {
   const navigate = useNavigate()
   const incidents = useSelector((state: RootState) => state.incidents)
+  const orders = useSelector((state: RootState) => state.orders.orders)
   const [cityFilter, setCityFilter] = useState<string>('All Cities')
   const [statusFilter, setStatusFilter] = useState<string>('All Status')
   const [riskFilter, setRiskFilter] = useState<string>('All Risk')
@@ -23,8 +23,8 @@ export default function OrdersList() {
 
   // Apply incident effects to orders
   const ordersWithIncidents = useMemo(() => {
-    return applyIncidentsToOrders(mockOrders, incidents)
-  }, [incidents])
+    return applyIncidentsToOrders(orders, incidents)
+  }, [orders, incidents])
 
   // Filter orders
   const filteredOrders = useMemo(() => {
@@ -90,12 +90,12 @@ export default function OrdersList() {
   // Get unique cities for filter
   const cities = useMemo(() => {
     const citySet = new Set<City>()
-    mockOrders.forEach((order) => {
+    orders.forEach((order) => {
       citySet.add(order.fromCity)
       citySet.add(order.toCity)
     })
     return Array.from(citySet).sort()
-  }, [])
+  }, [orders])
 
   return (
     <div>

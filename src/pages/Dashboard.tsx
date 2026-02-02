@@ -1,15 +1,15 @@
 import { useSelector } from 'react-redux'
 import type { RootState } from '../store/store'
 import { getSystemMode } from '../utils/systemMode'
-import { mockOrders } from '../mock/data'
 import { applyIncidentsToOrders, calculateDelayStats } from '../utils/incidentEffects'
 
 export default function Dashboard() {
   const incidents = useSelector((state: RootState) => state.incidents)
+  const orders = useSelector((state: RootState) => state.orders.orders)
   const systemMode = getSystemMode(incidents)
 
   // Apply incident effects and calculate stats
-  const ordersWithIncidents = applyIncidentsToOrders(mockOrders, incidents)
+  const ordersWithIncidents = applyIncidentsToOrders(orders, incidents)
   const delayStats = calculateDelayStats(ordersWithIncidents)
   
   // Count active deliveries (orders not delivered or cancelled)
