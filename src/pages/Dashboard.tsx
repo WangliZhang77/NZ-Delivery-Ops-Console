@@ -12,6 +12,7 @@ import IncidentStatusChart from '../components/Charts/IncidentStatusChart'
 import AgeStatusChart from '../components/Charts/AgeStatusChart'
 import StatusQueueChart from '../components/Charts/StatusQueueChart'
 import DriverChart from '../components/Charts/DriverChart'
+import OrdersTable from '../components/OrdersTable'
 import type { RiskLevel, OrderStatus } from '../types/order'
 
 export default function Dashboard() {
@@ -410,6 +411,11 @@ export default function Dashboard() {
           North Island Delivery Routes
         </h2>
         <NorthIslandMap />
+      </div>
+
+      {/* Orders Table - Bottom Section */}
+      <div className="mt-6">
+        <OrdersTable orders={ordersWithIncidents} incidents={incidents} />
       </div>
     </div>
   )
