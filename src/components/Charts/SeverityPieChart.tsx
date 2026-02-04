@@ -11,6 +11,8 @@ const COLORS = {
   High: '#ef4444', // red
 }
 
+const axisStyle = { fontSize: 12, fill: '#64748b' }
+
 export default function SeverityPieChart({ data }: SeverityPieChartProps) {
   const chartData = data.map((item) => ({
     name: item.riskLevel,
@@ -18,28 +20,29 @@ export default function SeverityPieChart({ data }: SeverityPieChartProps) {
   }))
 
   return (
-    <div className="h-full">
-      <h3 className="text-sm font-medium text-gray-700 mb-2">Severity Distribution</h3>
-      <ResponsiveContainer width="100%" height={200}>
-        <PieChart>
-          <Pie
-            data={chartData}
-            cx="50%"
-            cy="50%"
-            labelLine={false}
-            label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-            outerRadius={70}
-            fill="#8884d8"
-            dataKey="value"
-          >
-            {chartData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={COLORS[entry.name as RiskLevel]} />
-            ))}
-          </Pie>
-          <Tooltip />
-          <Legend />
-        </PieChart>
-      </ResponsiveContainer>
-    </div>
+    <ResponsiveContainer width="100%" height="100%">
+      <PieChart margin={{ top: 8, right: 16, bottom: 16, left: 24 }}>
+        <Pie
+          data={chartData}
+          cx="50%"
+          cy="50%"
+          labelLine={false}
+          outerRadius={65}
+          fill="#8884d8"
+          dataKey="value"
+        >
+          {chartData.map((entry, index) => (
+            <Cell key={`cell-${index}`} fill={COLORS[entry.name as RiskLevel]} />
+          ))}
+        </Pie>
+        <Tooltip />
+        <Legend 
+          verticalAlign="bottom" 
+          height={36}
+          iconType="circle"
+          wrapperStyle={{ fontSize: '12px', color: '#64748b' }}
+        />
+      </PieChart>
+    </ResponsiveContainer>
   )
 }

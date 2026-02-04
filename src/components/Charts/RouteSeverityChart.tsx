@@ -11,26 +11,41 @@ const COLORS = {
   High: '#ef4444',
 }
 
+const axisStyle = { fontSize: 12, fill: '#64748b' }
+
 export default function RouteSeverityChart({ data }: RouteSeverityChartProps) {
+  // Shorten route names for better display
+  const shortenedData = data.map(item => ({
+    ...item,
+    route: item.route.length > 15 ? item.route.substring(0, 12) + '...' : item.route,
+  }))
+
   return (
-    <div className="h-full">
-      <h3 className="text-sm font-medium text-gray-700 mb-2">Route vs Severity</h3>
-      <ResponsiveContainer width="100%" height={200}>
-        <BarChart
-          data={data}
-          layout="vertical"
-          margin={{ top: 5, right: 30, left: 60, bottom: 5 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis type="number" />
-          <YAxis dataKey="route" type="category" width={80} />
-          <Tooltip />
-          <Legend />
-          <Bar dataKey="Low" stackId="a" fill={COLORS.Low} />
-          <Bar dataKey="Medium" stackId="a" fill={COLORS.Medium} />
-          <Bar dataKey="High" stackId="a" fill={COLORS.High} />
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
+    <ResponsiveContainer width="100%" height="100%">
+      <BarChart
+        data={shortenedData}
+        layout="vertical"
+        margin={{ top: 8, right: 16, bottom: 16, left: 24 }}
+      >
+        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.5} />
+        <XAxis type="number" tick={axisStyle} />
+        <YAxis 
+          dataKey="route" 
+          type="category" 
+          width={70}
+          tick={axisStyle}
+        />
+        <Tooltip />
+        <Legend 
+          verticalAlign="bottom" 
+          height={36}
+          iconType="square"
+          wrapperStyle={{ fontSize: '12px', color: '#64748b' }}
+        />
+        <Bar dataKey="Low" stackId="a" fill={COLORS.Low} />
+        <Bar dataKey="Medium" stackId="a" fill={COLORS.Medium} />
+        <Bar dataKey="High" stackId="a" fill={COLORS.High} />
+      </BarChart>
+    </ResponsiveContainer>
   )
 }

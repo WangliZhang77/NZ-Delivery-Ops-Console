@@ -12,6 +12,7 @@ import IncidentStatusChart from '../components/Charts/IncidentStatusChart'
 import AgeStatusChart from '../components/Charts/AgeStatusChart'
 import StatusQueueChart from '../components/Charts/StatusQueueChart'
 import DriverChart from '../components/Charts/DriverChart'
+import ChartCard from '../components/Charts/ChartCard'
 import OrdersTable from '../components/OrdersTable'
 import type { RiskLevel, OrderStatus } from '../types/order'
 
@@ -329,36 +330,40 @@ export default function Dashboard() {
       </div>
 
       {/* Charts Section - First Row (4 charts) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" style={{ minHeight: '280px' }}>
+        <ChartCard title="Severity Distribution">
           <SeverityPieChart data={severityData} />
-        </div>
-        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+        </ChartCard>
+        <ChartCard title="Route vs Severity">
           <RouteSeverityChart data={routeSeverityData} />
-        </div>
-        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+        </ChartCard>
+        <ChartCard title="Status vs Severity">
           <StatusSeverityChart data={statusSeverityData} />
-        </div>
-        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+        </ChartCard>
+        <ChartCard title="Incident vs Order Status">
           <IncidentStatusChart data={incidentStatusData} />
-        </div>
+        </ChartCard>
       </div>
 
       {/* Charts Section - Second Row (3 charts + Map Preview) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" style={{ minHeight: '280px' }}>
+        <ChartCard title="Age vs Status">
           <AgeStatusChart data={ageStatusData} />
-        </div>
-        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+        </ChartCard>
+        <ChartCard title="Status vs Queue">
           <StatusQueueChart data={statusQueueData} />
-        </div>
-        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+        </ChartCard>
+        <ChartCard title="Driver Distribution">
           <DriverChart data={driverData} />
-        </div>
-        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex items-center justify-center">
-          <div className="text-center text-gray-400">
-            <p className="text-sm">Map Preview</p>
-            <p className="text-xs mt-1">Available below</p>
+        </ChartCard>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col h-full">
+          <div className="px-4 py-3 border-b border-gray-200 flex-shrink-0">
+            <h3 className="text-sm font-semibold text-gray-700">Map Preview</h3>
+          </div>
+          <div className="flex-1 p-4 flex items-center justify-center">
+            <div className="text-center text-gray-400">
+              <p className="text-xs">Available below</p>
+            </div>
           </div>
         </div>
       </div>

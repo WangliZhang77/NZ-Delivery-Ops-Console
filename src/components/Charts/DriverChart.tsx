@@ -1,27 +1,36 @@
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
 interface DriverChartProps {
   data: { name: string; count: number }[]
 }
 
+const axisStyle = { fontSize: 12, fill: '#64748b' }
+
 export default function DriverChart({ data }: DriverChartProps) {
+  // Shorten driver names if too long
+  const shortenedData = data.map(item => ({
+    ...item,
+    name: item.name.length > 12 ? item.name.substring(0, 10) + '...' : item.name,
+  }))
+
   return (
-    <div className="h-full">
-      <h3 className="text-sm font-medium text-gray-700 mb-2">Driver Distribution</h3>
-      <ResponsiveContainer width="100%" height={200}>
-        <BarChart
-          data={data}
-          layout="vertical"
-          margin={{ top: 5, right: 30, left: 80, bottom: 5 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis type="number" />
-          <YAxis dataKey="name" type="category" width={100} />
-          <Tooltip />
-          <Legend />
-          <Bar dataKey="count" fill="#3b82f6" />
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
+    <ResponsiveContainer width="100%" height="100%">
+      <BarChart
+        data={shortenedData}
+        layout="vertical"
+        margin={{ top: 8, right: 16, bottom: 16, left: 24 }}
+      >
+        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.5} />
+        <XAxis type="number" tick={axisStyle} />
+        <YAxis 
+          dataKey="name" 
+          type="category" 
+          width={65}
+          tick={axisStyle}
+        />
+        <Tooltip />
+        <Bar dataKey="count" fill="#3b82f6" radius={[0, 4, 4, 0]} />
+      </BarChart>
+    </ResponsiveContainer>
   )
 }

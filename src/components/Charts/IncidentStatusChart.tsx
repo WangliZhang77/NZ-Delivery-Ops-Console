@@ -11,25 +11,35 @@ const COLORS = {
   Offline: '#ef4444',
 }
 
+const axisStyle = { fontSize: 12, fill: '#64748b' }
+
 export default function IncidentStatusChart({ data }: IncidentStatusChartProps) {
   return (
-    <div className="h-full">
-      <h3 className="text-sm font-medium text-gray-700 mb-2">Incident vs Order Status</h3>
-      <ResponsiveContainer width="100%" height={200}>
-        <BarChart
-          data={data}
-          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="status" />
-          <YAxis />
-          <Tooltip />
-          <Legend />
-          <Bar dataKey="Normal" fill={COLORS.Normal} />
-          <Bar dataKey="Disruption" fill={COLORS.Disruption} />
-          <Bar dataKey="Offline" fill={COLORS.Offline} />
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
+    <ResponsiveContainer width="100%" height="100%">
+      <BarChart
+        data={data}
+        margin={{ top: 8, right: 16, bottom: 16, left: 24 }}
+      >
+        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.5} />
+        <XAxis 
+          dataKey="status" 
+          angle={-45}
+          textAnchor="end"
+          height={60}
+          tick={axisStyle}
+        />
+        <YAxis tick={axisStyle} />
+        <Tooltip />
+        <Legend 
+          verticalAlign="bottom" 
+          height={36}
+          iconType="square"
+          wrapperStyle={{ fontSize: '12px', color: '#64748b' }}
+        />
+        <Bar dataKey="Normal" fill={COLORS.Normal} />
+        <Bar dataKey="Disruption" fill={COLORS.Disruption} />
+        <Bar dataKey="Offline" fill={COLORS.Offline} />
+      </BarChart>
+    </ResponsiveContainer>
   )
 }
