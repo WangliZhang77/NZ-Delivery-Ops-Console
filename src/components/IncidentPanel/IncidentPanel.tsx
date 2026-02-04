@@ -12,6 +12,7 @@ import {
   setNetworkLevel,
   recoverAll,
 } from '../../store/incidentsSlice'
+import { showToast } from '../../store/toastSlice'
 import { recoverAndSync } from '../../utils/recover'
 import type { Severity, NetworkLevel } from '../../types/incident'
 
@@ -56,11 +57,16 @@ export default function IncidentPanel({ onClose }: IncidentPanelProps) {
       const result = await recoverAndSync()
       
       // Show success message
-      alert(
-        `Recovery complete! Synced ${result.syncedCount} actions, ${result.failedCount} failed.`
-      )
+      dispatch(showToast({
+        message: `Recovery complete! Synced ${result.syncedCount} actions${result.failedCount > 0 ? `, ${result.failedCount} failed` : ''}.`,
+        type: result.failedCount > 0 ? 'warning' : 'success',
+        duration: 5000,
+      }))
     } catch (error) {
-      alert('Recovery failed. Please try again.')
+      dispatch(showToast({
+        message: 'Recovery failed. Please try again.',
+        type: 'error',
+      }))
     } finally {
       setIsRecovering(false)
     }

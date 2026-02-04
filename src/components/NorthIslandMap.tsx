@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -181,25 +181,34 @@ export default function NorthIslandMap() {
     fetchRoutes()
   }, [])
 
-  // Count active orders per route
-  const getRouteOrderCount = (fromCity: string, toCity: string) => {
-    return orders.filter(
-      (order) =>
-        (order.fromCity === fromCity && order.toCity === toCity) ||
-        (order.fromCity === toCity && order.toCity === fromCity)
-    ).length
-  }
+  // Count active orders per route (memoized)
+  const routeOrderCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    routeConfigs.forEach((route) => {
+      const key = `${route.from.name}-${route.to.name}`
+      counts[key] = orders.filter(
+        (order) =>
+          (order.fromCity === route.from.name && order.toCity === route.to.name) ||
+          (order.fromCity === route.to.name && order.toCity === route.from.name)
+      ).length
+    })
+    return counts
+  }, [orders])
 
-  // Get route color based on incidents
-  const getRouteColor = (baseColor: string) => {
-    if (incidents.roadClosure.active && incidents.roadClosure.severity === 'High') {
-      return '#dc2626' // Red for high road closure
-    }
-    if (incidents.rain.active || incidents.wind.active) {
-      return '#f59e0b' // Orange for weather issues
-    }
-    return baseColor
-  }
+  // Get route color based on incidents (memoized)
+  const routeColors = useMemo(() => {
+    const colors: Record<string, string> = {}
+    routeConfigs.forEach((route) => {
+      if (incidents.roadClosure.active && incidents.roadClosure.severity === 'High') {
+        colors[route.key] = '#dc2626' // Red for high road closure
+      } else if (incidents.rain.active || incidents.wind.active) {
+        colors[route.key] = '#f59e0b' // Orange for weather issues
+      } else {
+        colors[route.key] = route.color
+      }
+    })
+    return colors
+  }, [incidents.roadClosure.active, incidents.roadClosure.severity, incidents.rain.active, incidents.wind.active])
 
   const toggleRoute = (routeKey: string) => {
     setVisibleRoutes(prev => ({
@@ -285,8 +294,11 @@ export default function NorthIslandMap() {
 
         {/* Draw actual road routes from OSRM API */}
         {loading ? (
-          <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75 z-[1000]">
-            <div className="text-gray-600">Loading routes...</div>
+          <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90 z-[1000]">
+            <div className="flex flex-col items-center gap-3">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <div className="text-gray-600 text-sm font-medium">Loading routes...</div>
+            </div>
           </div>
         ) : (
           routeConfigs.map((route) => {
@@ -296,8 +308,8 @@ export default function NorthIslandMap() {
             const coordinates = routeCoordinates[route.key]
             if (!coordinates || coordinates.length === 0) return null
 
-            const orderCount = getRouteOrderCount(route.from.name, route.to.name)
-            const routeColor = getRouteColor(route.color)
+            const orderCount = routeOrderCounts[`${route.from.name}-${route.to.name}`] || 0
+            const routeColor = routeColors[route.key] || route.color
             const baseWeight = 4 // Fixed weight for better visibility when overlapping
             
             // Draw route with border and main color to make overlapping routes visible

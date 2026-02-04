@@ -1,10 +1,12 @@
 import { useEffect } from 'react'
+import type { CSSProperties } from 'react'
 
 interface ToastProps {
   message: string
   type?: 'success' | 'info' | 'warning' | 'error'
   onClose: () => void
   duration?: number
+  style?: CSSProperties
 }
 
 export default function Toast({
@@ -12,6 +14,7 @@ export default function Toast({
   type = 'info',
   onClose,
   duration = 3000,
+  style,
 }: ToastProps) {
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -29,7 +32,7 @@ export default function Toast({
   }
 
   return (
-    <div className="fixed top-20 right-6 z-50 animate-slide-in">
+    <div className="fixed right-6 z-50 animate-slide-in" style={style}>
       <div
         className={`${bgColors[type]} text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3 min-w-[300px]`}
       >

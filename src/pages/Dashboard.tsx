@@ -8,6 +8,9 @@ import NorthIslandMap from '../components/NorthIslandMap'
 export default function Dashboard() {
   const incidents = useSelector((state: RootState) => state.incidents)
   const orders = useSelector((state: RootState) => state.orders.orders)
+  const queuedActionsCount = useSelector(
+    (state: RootState) => state.queue.actions.filter(a => a.status === 'Queued').length
+  )
   const systemMode = getSystemMode(incidents)
 
   // Apply incident effects and calculate stats
@@ -64,7 +67,9 @@ export default function Dashboard() {
           <h3 className="text-sm font-medium text-gray-500 mb-2">
             Queued Actions
           </h3>
-          <p className="text-3xl font-bold text-blue-600">--</p>
+          <p className="text-3xl font-bold text-blue-600">
+            {queuedActionsCount}
+          </p>
         </div>
       </div>
 

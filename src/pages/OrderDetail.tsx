@@ -1,6 +1,7 @@
 import { useParams, Link } from 'react-router-dom'
-import { useSelector } from 'react-redux'
+import { useSelector, useDispatch } from 'react-redux'
 import type { RootState } from '../store/store'
+import { showToast } from '../store/toastSlice'
 import { applyIncidentsToOrders } from '../utils/incidentEffects'
 import { generateStatusHistory } from '../utils/timeline'
 import { formatEta, formatDateTime } from '../utils/format'
@@ -11,6 +12,7 @@ import Timeline from '../components/Timeline'
 
 export default function OrderDetail() {
   const { id } = useParams()
+  const dispatch = useDispatch()
   const incidents = useSelector((state: RootState) => state.incidents)
   const orders = useSelector((state: RootState) => state.orders.orders)
   
@@ -161,7 +163,10 @@ export default function OrderDetail() {
               })
               if (!wasQueued) {
                 // In real app, this would update the order
-                alert('Order status updated to EnRoute')
+                dispatch(showToast({
+                  message: 'Order status updated to EnRoute',
+                  type: 'success',
+                }))
               }
             }}
             className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium"
@@ -176,7 +181,10 @@ export default function OrderDetail() {
               })
               if (!wasQueued) {
                 // In real app, this would assign the driver
-                alert('Driver assigned')
+                dispatch(showToast({
+                  message: 'Driver assigned successfully',
+                  type: 'success',
+                }))
               }
             }}
             className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium"
