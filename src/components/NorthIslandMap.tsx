@@ -252,7 +252,7 @@ export default function NorthIslandMap() {
             </label>
           ))}
         </div>
-        <div className="mt-2 pt-2 border-t border-gray-200">
+        <div className="mt-2 pt-2 border-t border-gray-200 flex gap-1">
           <button
             onClick={() => {
               const allVisible: Record<string, boolean> = {}
@@ -261,9 +261,21 @@ export default function NorthIslandMap() {
               })
               setVisibleRoutes(allVisible)
             }}
-            className="w-full px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+            className="flex-1 px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
           >
             Show All
+          </button>
+          <button
+            onClick={() => {
+              const allHidden: Record<string, boolean> = {}
+              routeConfigs.forEach(route => {
+                allHidden[route.key] = false
+              })
+              setVisibleRoutes(allHidden)
+            }}
+            className="flex-1 px-2 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
+          >
+            Clear All
           </button>
         </div>
       </div>
