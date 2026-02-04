@@ -1,5 +1,6 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts'
 import type { RiskLevel } from '../../types/order'
+import CustomTooltip from './CustomTooltip'
 
 interface SeverityPieChartProps {
   data: { riskLevel: RiskLevel; count: number }[]
@@ -19,6 +20,8 @@ export default function SeverityPieChart({ data }: SeverityPieChartProps) {
     value: item.count,
   }))
 
+  const total = chartData.reduce((sum, item) => sum + item.value, 0)
+
   return (
     <ResponsiveContainer width="100%" height="100%">
       <PieChart margin={{ top: 8, right: 16, bottom: 16, left: 24 }}>
@@ -26,19 +29,40 @@ export default function SeverityPieChart({ data }: SeverityPieChartProps) {
           data={chartData}
           cx="50%"
           cy="50%"
+          innerRadius={55}
+          outerRadius={80}
+          paddingAngle={2}
           labelLine={false}
-          outerRadius={65}
-          fill="#8884d8"
           dataKey="value"
+          nameKey="name"
         >
           {chartData.map((entry, index) => (
             <Cell key={`cell-${index}`} fill={COLORS[entry.name as RiskLevel]} />
           ))}
         </Pie>
-        <Tooltip />
+        {/* Center text showing total */}
+        <text
+          x="50%"
+          y="45%"
+          textAnchor="middle"
+          dominantBaseline="middle"
+          style={{ fontSize: '12px', fontWeight: 600, fill: '#64748b' }}
+        >
+          Total
+        </text>
+        <text
+          x="50%"
+          y="55%"
+          textAnchor="middle"
+          dominantBaseline="middle"
+          style={{ fontSize: '18px', fontWeight: 700, fill: '#111827' }}
+        >
+          {total}
+        </text>
+        <Tooltip content={<CustomTooltip showPercentage total={total} />} />
         <Legend 
           verticalAlign="bottom" 
-          height={36}
+          height={24}
           iconType="circle"
           wrapperStyle={{ fontSize: '12px', color: '#64748b' }}
         />

@@ -1,5 +1,6 @@
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, Legend, ResponsiveContainer, Tooltip } from 'recharts'
 import type { OrderStatus } from '../../types/order'
+import CustomTooltip from './CustomTooltip'
 
 interface IncidentStatusChartProps {
   data: { status: OrderStatus; Normal: number; Disruption: number; Offline: number }[]
@@ -20,19 +21,18 @@ export default function IncidentStatusChart({ data }: IncidentStatusChartProps) 
         data={data}
         margin={{ top: 8, right: 16, bottom: 16, left: 24 }}
       >
-        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.5} />
         <XAxis 
           dataKey="status" 
-          angle={-45}
+          tick={axisStyle}
+          angle={-15}
           textAnchor="end"
           height={60}
-          tick={axisStyle}
         />
         <YAxis tick={axisStyle} />
-        <Tooltip />
+        <Tooltip content={<CustomTooltip titleKey="status" />} />
         <Legend 
           verticalAlign="bottom" 
-          height={36}
+          height={24}
           iconType="square"
           wrapperStyle={{ fontSize: '12px', color: '#64748b' }}
         />

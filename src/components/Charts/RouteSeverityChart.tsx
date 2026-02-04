@@ -1,8 +1,9 @@
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, Legend, ResponsiveContainer, Tooltip } from 'recharts'
 import type { RiskLevel } from '../../types/order'
+import CustomTooltip from './CustomTooltip'
 
 interface RouteSeverityChartProps {
-  data: { route: string; Low: number; Medium: number; High: number }[]
+  data: { route: string; originalRoute?: string; Low: number; Medium: number; High: number }[]
 }
 
 const COLORS = {
@@ -14,31 +15,24 @@ const COLORS = {
 const axisStyle = { fontSize: 12, fill: '#64748b' }
 
 export default function RouteSeverityChart({ data }: RouteSeverityChartProps) {
-  // Shorten route names for better display
-  const shortenedData = data.map(item => ({
-    ...item,
-    route: item.route.length > 15 ? item.route.substring(0, 12) + '...' : item.route,
-  }))
-
   return (
     <ResponsiveContainer width="100%" height="100%">
       <BarChart
-        data={shortenedData}
+        data={data}
         layout="vertical"
-        margin={{ top: 8, right: 16, bottom: 16, left: 24 }}
+        margin={{ top: 8, right: 16, bottom: 16, left: 80 }}
       >
-        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.5} />
         <XAxis type="number" tick={axisStyle} />
-        <YAxis 
-          dataKey="route" 
-          type="category" 
-          width={70}
+        <YAxis
+          type="category"
+          dataKey="route"
           tick={axisStyle}
+          width={90}
         />
-        <Tooltip />
+        <Tooltip content={<CustomTooltip titleKey="originalRoute" />} />
         <Legend 
           verticalAlign="bottom" 
-          height={36}
+          height={24}
           iconType="square"
           wrapperStyle={{ fontSize: '12px', color: '#64748b' }}
         />

@@ -10,7 +10,7 @@ import RouteSeverityChart from '../components/Charts/RouteSeverityChart'
 import StatusSeverityChart from '../components/Charts/StatusSeverityChart'
 import IncidentStatusChart from '../components/Charts/IncidentStatusChart'
 import AgeStatusChart from '../components/Charts/AgeStatusChart'
-import StatusQueueChart from '../components/Charts/StatusQueueChart'
+import QueueHealth from '../components/Charts/QueueHealth'
 import DriverChart from '../components/Charts/DriverChart'
 import ChartCard from '../components/Charts/ChartCard'
 import OrdersTable from '../components/OrdersTable'
@@ -77,32 +77,56 @@ export default function Dashboard() {
 
   // Chart 2: Route vs Severity (Horizontal Stacked Bar)
   const routeSeverityData = useMemo(() => {
-    const routeMap = new Map<string, Record<RiskLevel, number>>()
+    const routeMap = new Map<string, { from: string; to: string; counts: Record<RiskLevel, number> }>()
     
     ordersWithIncidents.forEach((order) => {
       if (order.status !== 'Delivered' && order.status !== 'Cancelled') {
-        const route = `${order.fromCity} → ${order.toCity}`
-        if (!routeMap.has(route)) {
-          routeMap.set(route, { Low: 0, Medium: 0, High: 0 })
+        const key = `${order.fromCity}-${order.toCity}`
+        if (!routeMap.has(key)) {
+          routeMap.set(key, { from: order.fromCity, to: order.toCity, counts: { Low: 0, Medium: 0, High: 0 } })
         }
-        const counts = routeMap.get(route)!
-        counts[order.riskLevel]++
+        const route = routeMap.get(key)!
+        route.counts[order.riskLevel]++
       }
     })
 
-    return Array.from(routeMap.entries())
-      .map(([route, counts]) => ({
-        route,
-        Low: counts.Low,
-        Medium: counts.Medium,
-        High: counts.High,
+    // Convert to array and calculate totals
+    const routes = Array.from(routeMap.entries())
+      .map(([key, route]) => ({
+        route: `${route.from.substring(0, 3).toUpperCase()} → ${route.to.substring(0, 3).toUpperCase()}`,
+        originalRoute: `${route.from} → ${route.to}`,
+        Low: route.counts.Low,
+        Medium: route.counts.Medium,
+        High: route.counts.High,
+        total: route.counts.Low + route.counts.Medium + route.counts.High,
       }))
-      .sort((a, b) => {
-        const totalA = a.Low + a.Medium + a.High
-        const totalB = b.Low + b.Medium + b.High
-        return totalB - totalA
-      })
-      .slice(0, 6) // Show top 6 routes
+      .sort((a, b) => b.total - a.total)
+
+    // Top 4 + Others
+    const top4 = routes.slice(0, 4)
+    const others = routes.slice(4)
+    const othersTotal = others.reduce((sum, r) => ({
+      Low: sum.Low + r.Low,
+      Medium: sum.Medium + r.Medium,
+      High: sum.High + r.High,
+      total: sum.total + r.total,
+    }), { Low: 0, Medium: 0, High: 0, total: 0 })
+
+    if (othersTotal.total > 0) {
+      return [
+        ...top4,
+        {
+          route: 'Others',
+          originalRoute: `${others.length} other routes`,
+          Low: othersTotal.Low,
+          Medium: othersTotal.Medium,
+          High: othersTotal.High,
+          total: othersTotal.total,
+        },
+      ]
+    }
+
+    return top4
   }, [ordersWithIncidents])
 
   // Chart 3: Status vs Severity (Horizontal Stacked Bar)
@@ -131,7 +155,8 @@ export default function Dashboard() {
 
   // Chart 4: Incident vs Order Status (Bar Chart)
   const incidentStatusData = useMemo(() => {
-    const statusOrder: OrderStatus[] = ['Created', 'Assigned', 'PickedUp', 'EnRoute', 'Delivered', 'Cancelled']
+    // Use shorter status names for x-axis
+    const statusOrder: OrderStatus[] = ['Assigned', 'EnRoute', 'Cancelled', 'Delivered']
     const currentMode = systemMode
 
     const countByStatus = (orders: typeof ordersWithIncidents, status: OrderStatus) => {
@@ -150,11 +175,10 @@ export default function Dashboard() {
     })
   }, [ordersWithIncidents, systemMode])
 
-  // Chart 5: Age vs Status (Stacked Bar Chart)
+  // Chart 5: Age vs Status (Stacked Bar Chart) - Business-friendly status grouping
   const ageStatusData = useMemo(() => {
     const now = new Date()
     const ageGroups = ['0-1h', '1-4h', '4h+']
-    const statusOrder: OrderStatus[] = ['Created', 'Assigned', 'PickedUp', 'EnRoute', 'Delivered', 'Cancelled']
     
     const getAgeGroup = (lastUpdated: string) => {
       const updated = new Date(lastUpdated)
@@ -165,22 +189,31 @@ export default function Dashboard() {
       return '4h+'
     }
 
-    const ageMap = new Map<string, Record<OrderStatus, number>>()
+    // Business-friendly status groups
+    const ageMap = new Map<string, { 'Not Started': number; 'In Transit': number; 'Completed': number; 'Exception': number }>()
     ageGroups.forEach(age => {
       ageMap.set(age, {
-        Created: 0,
-        Assigned: 0,
-        PickedUp: 0,
-        EnRoute: 0,
-        Delivered: 0,
-        Cancelled: 0,
+        'Not Started': 0,
+        'In Transit': 0,
+        'Completed': 0,
+        'Exception': 0,
       })
     })
 
     ordersWithIncidents.forEach((order) => {
       const ageGroup = getAgeGroup(order.lastUpdatedAt)
       const counts = ageMap.get(ageGroup)!
-      counts[order.status]++
+      
+      // Map status to business-friendly groups
+      if (order.status === 'Created') {
+        counts['Not Started']++
+      } else if (order.status === 'Assigned' || order.status === 'PickedUp' || order.status === 'EnRoute') {
+        counts['In Transit']++
+      } else if (order.status === 'Delivered') {
+        counts['Completed']++
+      } else if (order.status === 'Cancelled') {
+        counts['Exception']++
+      }
     })
 
     return ageGroups.map((ageGroup) => ({
@@ -189,26 +222,22 @@ export default function Dashboard() {
     }))
   }, [ordersWithIncidents])
 
-  // Chart 6: Status vs Queue (Bar Chart)
-  const statusQueueData = useMemo(() => {
-    const statusCounts: Record<string, number> = {
-      Queued: 0,
-      Synced: 0,
-      Failed: 0,
-    }
+  // Chart 6: Queue Health (Card with metrics)
+  const queueHealthData = useMemo(() => {
+    let queued = 0
+    let synced = 0
+    let failed = 0
 
     queue.actions.forEach((action) => {
-      statusCounts[action.status]++
+      if (action.status === 'Queued') queued++
+      else if (action.status === 'Synced') synced++
+      else if (action.status === 'Failed') failed++
     })
 
-    return [
-      { status: 'Queued' as const, count: statusCounts.Queued },
-      { status: 'Synced' as const, count: statusCounts.Synced },
-      { status: 'Failed' as const, count: statusCounts.Failed },
-    ]
+    return { queued, synced, failed }
   }, [queue.actions])
 
-  // Chart 7: Driver Distribution (Bar Chart)
+  // Chart 7: Driver Distribution (Bar Chart) - Top 5 + No Driver + Others
   const driverData = useMemo(() => {
     const driverMap = new Map<string, number>()
     let noDriverCount = 0
@@ -223,17 +252,31 @@ export default function Dashboard() {
       }
     })
 
-    const driverArray = Array.from(driverMap.entries())
+    // Convert to array and sort
+    const drivers = Array.from(driverMap.entries())
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count)
-      .slice(0, 5) // Top 5 drivers
 
-    // Add "No Driver" at the beginning if there are unassigned orders
+    // Top 5 + Others
+    const top5 = drivers.slice(0, 5).map(d => ({
+      name: d.name.split(' ').map(n => n[0]).join('. ') + '.', // Abbreviate: "John Smith" -> "J. S."
+      fullName: d.name,
+      count: d.count,
+    }))
+    
+    const othersTotal = drivers.slice(5).reduce((sum, d) => sum + d.count, 0)
+
+    const result = [...top5]
+    
     if (noDriverCount > 0) {
-      return [{ name: 'No Driver', count: noDriverCount }, ...driverArray]
+      result.push({ name: 'No Driver', fullName: 'No Driver', count: noDriverCount })
+    }
+    
+    if (othersTotal > 0) {
+      result.push({ name: 'Others', fullName: `${drivers.slice(5).length} other drivers`, count: othersTotal })
     }
 
-    return driverArray
+    return result
   }, [ordersWithIncidents])
 
   const getModeColor = () => {
@@ -340,7 +383,7 @@ export default function Dashboard() {
         <ChartCard title="Status vs Severity">
           <StatusSeverityChart data={statusSeverityData} />
         </ChartCard>
-        <ChartCard title="Incident vs Order Status">
+        <ChartCard title="Order Status by System Mode">
           <IncidentStatusChart data={incidentStatusData} />
         </ChartCard>
       </div>
@@ -350,8 +393,12 @@ export default function Dashboard() {
         <ChartCard title="Age vs Status">
           <AgeStatusChart data={ageStatusData} />
         </ChartCard>
-        <ChartCard title="Status vs Queue">
-          <StatusQueueChart data={statusQueueData} />
+        <ChartCard title="Queue Health">
+          <QueueHealth 
+            queued={queueHealthData.queued}
+            synced={queueHealthData.synced}
+            failed={queueHealthData.failed}
+          />
         </ChartCard>
         <ChartCard title="Driver Distribution">
           <DriverChart data={driverData} />

@@ -1,5 +1,6 @@
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell } from 'recharts'
 import type { QueueStatus } from '../../types/queue'
+import CustomTooltip from './CustomTooltip'
 
 interface StatusQueueChartProps {
   data: { status: QueueStatus; count: number }[]
@@ -20,13 +21,12 @@ export default function StatusQueueChart({ data }: StatusQueueChartProps) {
         data={data}
         margin={{ top: 8, right: 16, bottom: 16, left: 24 }}
       >
-        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.5} />
         <XAxis 
           dataKey="status" 
           tick={axisStyle}
         />
         <YAxis tick={axisStyle} />
-        <Tooltip />
+        <CustomTooltip titleKey="status" />
         <Bar dataKey="count" radius={[4, 4, 0, 0]}>
           {data.map((entry, index) => (
             <Cell key={`cell-${index}`} fill={COLORS[entry.status]} />
