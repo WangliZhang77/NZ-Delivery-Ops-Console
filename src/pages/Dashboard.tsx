@@ -1,9 +1,15 @@
 import { useSelector } from 'react-redux'
+import { useMemo } from 'react'
 import type { RootState } from '../store/store'
 import { getSystemMode } from '../utils/systemMode'
 import { applyIncidentsToOrders, calculateDelayStats } from '../utils/incidentEffects'
 import { formatEta } from '../utils/format'
 import NorthIslandMap from '../components/NorthIslandMap'
+import SeverityPieChart from '../components/Charts/SeverityPieChart'
+import RouteSeverityChart from '../components/Charts/RouteSeverityChart'
+import StatusSeverityChart from '../components/Charts/StatusSeverityChart'
+import IncidentStatusChart from '../components/Charts/IncidentStatusChart'
+import type { RiskLevel, OrderStatus } from '../types/order'
 
 export default function Dashboard() {
   const incidents = useSelector((state: RootState) => state.incidents)
@@ -47,6 +53,96 @@ export default function Dashboard() {
     incidents.roadClosure.active && !incidents.roadClosure.acknowledged,
     incidents.network.active && !incidents.network.acknowledged,
   ].filter(Boolean).length
+
+  // Chart 1: Severity Distribution (Pie Chart)
+  const severityData = useMemo(() => {
+    const counts: Record<RiskLevel, number> = { Low: 0, Medium: 0, High: 0 }
+    ordersWithIncidents.forEach((order) => {
+      if (order.status !== 'Delivered' && order.status !== 'Cancelled') {
+        counts[order.riskLevel]++
+      }
+    })
+    return [
+      { riskLevel: 'Low' as RiskLevel, count: counts.Low },
+      { riskLevel: 'Medium' as RiskLevel, count: counts.Medium },
+      { riskLevel: 'High' as RiskLevel, count: counts.High },
+    ]
+  }, [ordersWithIncidents])
+
+  // Chart 2: Route vs Severity (Horizontal Stacked Bar)
+  const routeSeverityData = useMemo(() => {
+    const routeMap = new Map<string, Record<RiskLevel, number>>()
+    
+    ordersWithIncidents.forEach((order) => {
+      if (order.status !== 'Delivered' && order.status !== 'Cancelled') {
+        const route = `${order.fromCity} → ${order.toCity}`
+        if (!routeMap.has(route)) {
+          routeMap.set(route, { Low: 0, Medium: 0, High: 0 })
+        }
+        const counts = routeMap.get(route)!
+        counts[order.riskLevel]++
+      }
+    })
+
+    return Array.from(routeMap.entries())
+      .map(([route, counts]) => ({
+        route,
+        Low: counts.Low,
+        Medium: counts.Medium,
+        High: counts.High,
+      }))
+      .sort((a, b) => {
+        const totalA = a.Low + a.Medium + a.High
+        const totalB = b.Low + b.Medium + b.High
+        return totalB - totalA
+      })
+      .slice(0, 6) // Show top 6 routes
+  }, [ordersWithIncidents])
+
+  // Chart 3: Status vs Severity (Horizontal Stacked Bar)
+  const statusSeverityData = useMemo(() => {
+    const statusMap = new Map<OrderStatus, Record<RiskLevel, number>>()
+    const statusOrder: OrderStatus[] = ['Created', 'Assigned', 'PickedUp', 'EnRoute', 'Delivered', 'Cancelled']
+    
+    ordersWithIncidents.forEach((order) => {
+      if (!statusMap.has(order.status)) {
+        statusMap.set(order.status, { Low: 0, Medium: 0, High: 0 })
+      }
+      const counts = statusMap.get(order.status)!
+      counts[order.riskLevel]++
+    })
+
+    return statusOrder.map((status) => {
+      const counts = statusMap.get(status) || { Low: 0, Medium: 0, High: 0 }
+      return {
+        status,
+        Low: counts.Low,
+        Medium: counts.Medium,
+        High: counts.High,
+      }
+    })
+  }, [ordersWithIncidents])
+
+  // Chart 4: Incident vs Order Status (Bar Chart)
+  const incidentStatusData = useMemo(() => {
+    const statusOrder: OrderStatus[] = ['Created', 'Assigned', 'PickedUp', 'EnRoute', 'Delivered', 'Cancelled']
+    const currentMode = systemMode
+
+    const countByStatus = (orders: typeof ordersWithIncidents, status: OrderStatus) => {
+      return orders.filter((o) => o.status === status).length
+    }
+
+    // Show current mode data, and set others to 0 or show all orders grouped by current mode
+    return statusOrder.map((status) => {
+      const count = countByStatus(ordersWithIncidents, status)
+      return {
+        status,
+        Normal: currentMode === 'Normal' ? count : 0,
+        Disruption: currentMode === 'Disruption' ? count : 0,
+        Offline: currentMode === 'Offline' ? count : 0,
+      }
+    })
+  }, [ordersWithIncidents, systemMode])
 
   const getModeColor = () => {
     switch (systemMode) {
@@ -138,6 +234,22 @@ export default function Dashboard() {
           <p className="text-3xl font-bold text-blue-600">
             {queuedActionsCount}
           </p>
+        </div>
+      </div>
+
+      {/* Charts Section - First Row (4 charts) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+          <SeverityPieChart data={severityData} />
+        </div>
+        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+          <RouteSeverityChart data={routeSeverityData} />
+        </div>
+        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+          <StatusSeverityChart data={statusSeverityData} />
+        </div>
+        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+          <IncidentStatusChart data={incidentStatusData} />
         </div>
       </div>
 
