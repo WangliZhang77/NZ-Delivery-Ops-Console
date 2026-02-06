@@ -6,7 +6,7 @@ import { applyIncidentsToOrders, calculateDelayStats } from '../utils/incidentEf
 import { formatEta } from '../utils/format'
 import NorthIslandMap from '../components/NorthIslandMap'
 import SeverityPieChart from '../components/Charts/SeverityPieChart'
-import RouteSeverityChart from '../components/Charts/RouteSeverityChart'
+import TopRiskRoutes from '../components/Charts/TopRiskRoutes'
 import StatusSeverityChart from '../components/Charts/StatusSeverityChart'
 import IncidentStatusChart from '../components/Charts/IncidentStatusChart'
 import AgeStatusChart from '../components/Charts/AgeStatusChart'
@@ -75,58 +75,62 @@ export default function Dashboard() {
     ]
   }, [ordersWithIncidents])
 
-  // Chart 2: Route vs Severity (Horizontal Stacked Bar)
-  const routeSeverityData = useMemo(() => {
-    const routeMap = new Map<string, { from: string; to: string; counts: Record<RiskLevel, number> }>()
+  // Chart 2: Top Risk Routes (Table format)
+  const topRiskRoutesData = useMemo(() => {
+    const routeMap = new Map<string, {
+      from: string
+      to: string
+      delays: number[]
+      riskLevels: RiskLevel[]
+    }>()
     
     ordersWithIncidents.forEach((order) => {
       if (order.status !== 'Delivered' && order.status !== 'Cancelled') {
         const key = `${order.fromCity}-${order.toCity}`
         if (!routeMap.has(key)) {
-          routeMap.set(key, { from: order.fromCity, to: order.toCity, counts: { Low: 0, Medium: 0, High: 0 } })
+          routeMap.set(key, {
+            from: order.fromCity,
+            to: order.toCity,
+            delays: [],
+            riskLevels: [],
+          })
         }
         const route = routeMap.get(key)!
-        route.counts[order.riskLevel]++
+        const delay = order.adjustedEtaMinutes - order.baseEtaMinutes
+        route.delays.push(delay)
+        route.riskLevels.push(order.riskLevel)
       }
     })
 
-    // Convert to array and calculate totals
+    // Convert to array and calculate average delay and highest risk
     const routes = Array.from(routeMap.entries())
-      .map(([key, route]) => ({
-        route: `${route.from.substring(0, 3).toUpperCase()} → ${route.to.substring(0, 3).toUpperCase()}`,
-        originalRoute: `${route.from} → ${route.to}`,
-        Low: route.counts.Low,
-        Medium: route.counts.Medium,
-        High: route.counts.High,
-        total: route.counts.Low + route.counts.Medium + route.counts.High,
-      }))
-      .sort((a, b) => b.total - a.total)
+      .map(([key, route]) => {
+        const avgDelay = route.delays.length > 0
+          ? Math.round(route.delays.reduce((sum, d) => sum + d, 0) / route.delays.length)
+          : 0
+        
+        // Get highest risk level (High > Medium > Low)
+        const riskPriority = { High: 3, Medium: 2, Low: 1 }
+        const highestRisk = route.riskLevels.reduce((max, risk) => {
+          return riskPriority[risk] > riskPriority[max] ? risk : max
+        }, 'Low' as RiskLevel)
 
-    // Top 4 + Others
-    const top4 = routes.slice(0, 4)
-    const others = routes.slice(4)
-    const othersTotal = others.reduce((sum, r) => ({
-      Low: sum.Low + r.Low,
-      Medium: sum.Medium + r.Medium,
-      High: sum.High + r.High,
-      total: sum.total + r.total,
-    }), { Low: 0, Medium: 0, High: 0, total: 0 })
+        return {
+          route: `${route.from.substring(0, 3).toUpperCase()} → ${route.to.substring(0, 3).toUpperCase()}`,
+          riskLevel: highestRisk,
+          avgDelayMinutes: avgDelay,
+        }
+      })
+      // Sort by risk level (High first), then by delay
+      .sort((a, b) => {
+        const riskPriority = { High: 3, Medium: 2, Low: 1 }
+        if (riskPriority[a.riskLevel] !== riskPriority[b.riskLevel]) {
+          return riskPriority[b.riskLevel] - riskPriority[a.riskLevel]
+        }
+        return b.avgDelayMinutes - a.avgDelayMinutes
+      })
 
-    if (othersTotal.total > 0) {
-      return [
-        ...top4,
-        {
-          route: 'Others',
-          originalRoute: `${others.length} other routes`,
-          Low: othersTotal.Low,
-          Medium: othersTotal.Medium,
-          High: othersTotal.High,
-          total: othersTotal.total,
-        },
-      ]
-    }
-
-    return top4
+    return routes
   }, [ordersWithIncidents])
 
   // Chart 3: Status vs Severity (Horizontal Stacked Bar)
@@ -377,8 +381,8 @@ export default function Dashboard() {
         <ChartCard title="Severity Distribution">
           <SeverityPieChart data={severityData} />
         </ChartCard>
-        <ChartCard title="Route vs Severity">
-          <RouteSeverityChart data={routeSeverityData} />
+        <ChartCard title="Top Risk Routes">
+          <TopRiskRoutes data={topRiskRoutesData} />
         </ChartCard>
         <ChartCard title="Status vs Severity">
           <StatusSeverityChart data={statusSeverityData} />
