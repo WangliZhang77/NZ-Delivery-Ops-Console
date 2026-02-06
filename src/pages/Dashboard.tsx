@@ -7,7 +7,7 @@ import { formatEta } from '../utils/format'
 import NorthIslandMap from '../components/NorthIslandMap'
 import SeverityPieChart from '../components/Charts/SeverityPieChart'
 import TopRiskRoutes from '../components/Charts/TopRiskRoutes'
-import StatusSeverityChart from '../components/Charts/StatusSeverityChart'
+import StatusSeverityHeatmap from '../components/Charts/StatusSeverityHeatmap'
 import IncidentStatusChart from '../components/Charts/IncidentStatusChart'
 import AgeStatusChart from '../components/Charts/AgeStatusChart'
 import QueueHealth from '../components/Charts/QueueHealth'
@@ -385,7 +385,7 @@ export default function Dashboard() {
           <TopRiskRoutes data={topRiskRoutesData} />
         </ChartCard>
         <ChartCard title="Status vs Severity">
-          <StatusSeverityChart data={statusSeverityData} />
+          <StatusSeverityHeatmap data={statusSeverityData} />
         </ChartCard>
         <ChartCard title="Order Status by System Mode">
           <IncidentStatusChart data={incidentStatusData} />
