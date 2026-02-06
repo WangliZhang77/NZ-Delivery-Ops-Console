@@ -21,6 +21,7 @@ export default function SeverityPieChart({ data }: SeverityPieChartProps) {
   }))
 
   const total = chartData.reduce((sum, item) => sum + item.value, 0)
+  const highRiskCount = data.find((item) => item.riskLevel === 'High')?.count || 0
 
   return (
     <ResponsiveContainer width="100%" height="100%">
@@ -40,24 +41,24 @@ export default function SeverityPieChart({ data }: SeverityPieChartProps) {
             <Cell key={`cell-${index}`} fill={COLORS[entry.name as RiskLevel]} />
           ))}
         </Pie>
-        {/* Center text showing total */}
+        {/* Center text showing total and high risk */}
         <text
           x="50%"
-          y="45%"
+          y="42%"
           textAnchor="middle"
           dominantBaseline="middle"
-          style={{ fontSize: '12px', fontWeight: 600, fill: '#64748b' }}
+          style={{ fontSize: '16px', fontWeight: 700, fill: '#111827' }}
         >
-          Total
+          {total} Deliveries
         </text>
         <text
           x="50%"
-          y="55%"
+          y="58%"
           textAnchor="middle"
           dominantBaseline="middle"
-          style={{ fontSize: '18px', fontWeight: 700, fill: '#111827' }}
+          style={{ fontSize: '12px', fontWeight: 600, fill: '#ef4444' }}
         >
-          {total}
+          High Risk: {highRiskCount}
         </text>
         <Tooltip content={<CustomTooltip showPercentage total={total} />} />
         <Legend 
