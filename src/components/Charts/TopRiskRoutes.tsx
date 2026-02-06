@@ -48,7 +48,11 @@ export default function TopRiskRoutes({ data }: TopRiskRoutesProps) {
               {item.riskLevel}
             </span>
             <div className={`text-sm font-medium flex-shrink-0 ml-auto ${RISK_COLORS[item.riskLevel]}`}>
-              {item.avgDelayMinutes > 0 ? `+${item.avgDelayMinutes} min` : '0 min'}
+              {item.avgDelayMinutes > 0 
+                ? `+${item.avgDelayMinutes} min` 
+                : item.riskLevel === 'High' 
+                  ? 'Route blocked' 
+                  : '0 min'}
             </div>
           </div>
         ))}

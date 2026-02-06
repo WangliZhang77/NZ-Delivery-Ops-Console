@@ -8,7 +8,7 @@ import NorthIslandMap from '../components/NorthIslandMap'
 import SeverityPieChart from '../components/Charts/SeverityPieChart'
 import TopRiskRoutes from '../components/Charts/TopRiskRoutes'
 import StatusSeverityHeatmap from '../components/Charts/StatusSeverityHeatmap'
-import IncidentStatusChart from '../components/Charts/IncidentStatusChart'
+import ImpactVsNormal from '../components/Charts/ImpactVsNormal'
 import AgeStatusChart from '../components/Charts/AgeStatusChart'
 import QueueHealth from '../components/Charts/QueueHealth'
 import DriverChart from '../components/Charts/DriverChart'
@@ -157,32 +157,43 @@ export default function Dashboard() {
     })
   }, [ordersWithIncidents])
 
-  // Chart 4: Incident vs Order Status (Bar Chart)
+  // Chart 4: Impact vs Normal (Bar Chart) - Show only Disruption/Offline impact
   const incidentStatusData = useMemo(() => {
-    // Use shorter status names for x-axis
-    const statusOrder: OrderStatus[] = ['Assigned', 'EnRoute', 'Cancelled', 'Delivered']
-    const currentMode = systemMode
+    // Calculate baseline (Normal mode - no incidents)
+    const baselineOrders = applyIncidentsToOrders(orders, {
+      rain: { active: false, severity: 'Low', acknowledged: false },
+      wind: { active: false, severity: 'Low', acknowledged: false },
+      roadClosure: { active: false, severity: 'Low', acknowledged: false },
+      network: { active: false, level: 'Degraded' },
+    })
 
-    const countByStatus = (orders: typeof ordersWithIncidents, status: OrderStatus) => {
-      return orders.filter((o) => o.status === status).length
+    const statusOrder: OrderStatus[] = ['Assigned', 'EnRoute', 'Cancelled', 'Delivered']
+    
+    const countByStatus = (orderList: typeof ordersWithIncidents, status: OrderStatus) => {
+      return orderList.filter((o) => o.status === status).length
     }
 
-    // Show current mode data, and set others to 0 or show all orders grouped by current mode
     return statusOrder.map((status) => {
-      const count = countByStatus(ordersWithIncidents, status)
+      const normalCount = countByStatus(baselineOrders, status)
+      const currentCount = countByStatus(ordersWithIncidents, status)
+      const difference = currentCount - normalCount
+
       return {
         status,
-        Normal: currentMode === 'Normal' ? count : 0,
-        Disruption: currentMode === 'Disruption' ? count : 0,
-        Offline: currentMode === 'Offline' ? count : 0,
+        Disruption: systemMode === 'Disruption' ? difference : 0,
+        Offline: systemMode === 'Offline' ? difference : 0,
       }
     })
-  }, [ordersWithIncidents, systemMode])
+  }, [orders, ordersWithIncidents, systemMode])
 
   // Chart 5: Age vs Status (Stacked Bar Chart) - Business-friendly status grouping
   const ageStatusData = useMemo(() => {
     const now = new Date()
-    const ageGroups = ['0-1h', '1-4h', '4h+']
+    const ageGroups = [
+      { key: '0-1h', label: 'Fresh' },
+      { key: '1-4h', label: 'At Risk' },
+      { key: '4h+', label: 'Overdue' },
+    ]
     
     const getAgeGroup = (lastUpdated: string) => {
       const updated = new Date(lastUpdated)
@@ -196,7 +207,7 @@ export default function Dashboard() {
     // Business-friendly status groups
     const ageMap = new Map<string, { 'Not Started': number; 'In Transit': number; 'Completed': number; 'Exception': number }>()
     ageGroups.forEach(age => {
-      ageMap.set(age, {
+      ageMap.set(age.key, {
         'Not Started': 0,
         'In Transit': 0,
         'Completed': 0,
@@ -220,9 +231,10 @@ export default function Dashboard() {
       }
     })
 
-    return ageGroups.map((ageGroup) => ({
-      ageGroup,
-      ...ageMap.get(ageGroup)!,
+    return ageGroups.map((age) => ({
+      ageGroup: age.label,
+      ageKey: age.key,
+      ...ageMap.get(age.key)!,
     }))
   }, [ordersWithIncidents])
 
@@ -241,7 +253,7 @@ export default function Dashboard() {
     return { queued, synced, failed }
   }, [queue.actions])
 
-  // Chart 7: Driver Distribution (Bar Chart) - Top 5 + No Driver + Others
+  // Chart 7: Driver Distribution (Bar Chart) - Top 3 + Others (reduced visual weight)
   const driverData = useMemo(() => {
     const driverMap = new Map<string, number>()
     let noDriverCount = 0
@@ -261,23 +273,19 @@ export default function Dashboard() {
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count)
 
-    // Top 5 + Others
-    const top5 = drivers.slice(0, 5).map(d => ({
+    // Top 3 + Others
+    const top3 = drivers.slice(0, 3).map(d => ({
       name: d.name.split(' ').map(n => n[0]).join('. ') + '.', // Abbreviate: "John Smith" -> "J. S."
       fullName: d.name,
       count: d.count,
     }))
     
-    const othersTotal = drivers.slice(5).reduce((sum, d) => sum + d.count, 0)
+    const othersTotal = drivers.slice(3).reduce((sum, d) => sum + d.count, 0)
 
-    const result = [...top5]
-    
-    if (noDriverCount > 0) {
-      result.push({ name: 'No Driver', fullName: 'No Driver', count: noDriverCount })
-    }
+    const result = [...top3]
     
     if (othersTotal > 0) {
-      result.push({ name: 'Others', fullName: `${drivers.slice(5).length} other drivers`, count: othersTotal })
+      result.push({ name: 'Others', fullName: `${drivers.slice(3).length} other drivers`, count: othersTotal })
     }
 
     return result
@@ -387,8 +395,8 @@ export default function Dashboard() {
         <ChartCard title="Status vs Severity">
           <StatusSeverityHeatmap data={statusSeverityData} />
         </ChartCard>
-        <ChartCard title="Order Status by System Mode">
-          <IncidentStatusChart data={incidentStatusData} />
+        <ChartCard title="Impact vs Normal (Δ Orders)">
+          <ImpactVsNormal data={incidentStatusData} systemMode={systemMode} />
         </ChartCard>
       </div>
 
@@ -402,21 +410,15 @@ export default function Dashboard() {
             queued={queueHealthData.queued}
             synced={queueHealthData.synced}
             failed={queueHealthData.failed}
+            systemMode={systemMode}
           />
         </ChartCard>
-        <ChartCard title="Driver Distribution">
+        <ChartCard title="Workload by Driver" titleClassName="text-xs">
           <DriverChart data={driverData} />
         </ChartCard>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col h-full">
-          <div className="px-4 py-3 border-b border-gray-200 flex-shrink-0">
-            <h3 className="text-sm font-semibold text-gray-700">Map Preview</h3>
-          </div>
-          <div className="flex-1 p-4 flex items-center justify-center">
-            <div className="text-center text-gray-400">
-              <p className="text-xs">Available below</p>
-            </div>
-          </div>
-        </div>
+        <ChartCard title="Map Preview">
+          <NorthIslandMap />
+        </ChartCard>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
@@ -462,12 +464,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mt-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">
-          North Island Delivery Routes
-        </h2>
-        <NorthIslandMap />
-      </div>
 
       {/* Orders Table - Bottom Section */}
       <div className="mt-6">

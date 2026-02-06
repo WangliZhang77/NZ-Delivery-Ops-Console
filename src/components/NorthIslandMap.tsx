@@ -123,14 +123,6 @@ export default function NorthIslandMap() {
   const incidents = useSelector((state: RootState) => state.incidents)
   const [routeCoordinates, setRouteCoordinates] = useState<Record<string, [number, number][]>>({})
   const [loading, setLoading] = useState(true)
-  // Track which routes are visible (default: all routes visible)
-  const [visibleRoutes, setVisibleRoutes] = useState<Record<string, boolean>>(() => {
-    const initial: Record<string, boolean> = {}
-    routeConfigs.forEach(route => {
-      initial[route.key] = true // Default: all routes visible
-    })
-    return initial
-  })
 
   // Calculate center point of all cities
   const centerLat = (cities.Auckland.lat + cities.Hamilton.lat + cities.Tauranga.lat + cities.Rotorua.lat) / 4
@@ -210,79 +202,12 @@ export default function NorthIslandMap() {
     return colors
   }, [incidents.roadClosure.active, incidents.roadClosure.severity, incidents.rain.active, incidents.wind.active])
 
-  const toggleRoute = (routeKey: string) => {
-    setVisibleRoutes(prev => ({
-      ...prev,
-      [routeKey]: !prev[routeKey]
-    }))
-  }
-
-  // Check if any route is selected
-  const hasSelectedRoutes = Object.values(visibleRoutes).some(v => v)
-  // If no routes selected, show all routes (default behavior)
-  const shouldShowRoute = (routeKey: string) => {
-    if (!hasSelectedRoutes) return true // Default: show all
-    return visibleRoutes[routeKey]
-  }
+  // Show all routes by default (no route selection needed)
 
   return (
-    <div className="flex gap-2" style={{ width: '400px' }}>
-      {/* Left sidebar with route options */}
-      <div className="bg-white rounded shadow-sm border border-gray-200 p-2 w-40 flex-shrink-0">
-        <h3 className="text-xs font-semibold text-gray-900 mb-2">Routes</h3>
-        <div className="space-y-1 max-h-64 overflow-y-auto">
-          {routeConfigs.map((route) => (
-            <label
-              key={route.key}
-              className="flex items-center gap-1.5 p-1 rounded hover:bg-gray-50 cursor-pointer transition-colors"
-            >
-              <input
-                type="checkbox"
-                checked={visibleRoutes[route.key] || false}
-                onChange={() => toggleRoute(route.key)}
-                className="w-3 h-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500 flex-shrink-0"
-              />
-              <div className="flex items-center gap-1 flex-1 min-w-0">
-                <div
-                  className="w-3 h-3 rounded flex-shrink-0"
-                  style={{ backgroundColor: route.color }}
-                />
-                <span className="text-xs text-gray-700 truncate">{route.label}</span>
-              </div>
-            </label>
-          ))}
-        </div>
-        <div className="mt-2 pt-2 border-t border-gray-200 flex gap-1">
-          <button
-            onClick={() => {
-              const allVisible: Record<string, boolean> = {}
-              routeConfigs.forEach(route => {
-                allVisible[route.key] = true
-              })
-              setVisibleRoutes(allVisible)
-            }}
-            className="flex-1 px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-          >
-            Show All
-          </button>
-          <button
-            onClick={() => {
-              const allHidden: Record<string, boolean> = {}
-              routeConfigs.forEach(route => {
-                allHidden[route.key] = false
-              })
-              setVisibleRoutes(allHidden)
-            }}
-            className="flex-1 px-2 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
-          >
-            Clear All
-          </button>
-        </div>
-      </div>
-
-      {/* Square map container */}
-      <div className="flex-1 min-w-0" style={{ width: '240px' }}>
-        <div className="w-full rounded overflow-hidden border border-gray-200" style={{ height: '240px' }}>
+    <div className="w-full h-full">
+      {/* Map container - full width and height */}
+      <div className="w-full h-full rounded overflow-hidden">
           <MapContainer
             center={[centerLat, centerLng]}
             zoom={8}
@@ -314,9 +239,6 @@ export default function NorthIslandMap() {
           </div>
         ) : (
           routeConfigs.map((route) => {
-            // Only show route if it's selected (or if no routes are selected, show all)
-            if (!shouldShowRoute(route.key)) return null
-
             const coordinates = routeCoordinates[route.key]
             if (!coordinates || coordinates.length === 0) return null
 
@@ -386,7 +308,6 @@ export default function NorthIslandMap() {
           )
         })}
       </MapContainer>
-        </div>
       </div>
     </div>
   )

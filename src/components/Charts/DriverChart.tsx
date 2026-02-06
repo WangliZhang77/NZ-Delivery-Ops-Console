@@ -8,6 +8,7 @@ interface DriverChartProps {
 const axisStyle = { fontSize: 12, fill: '#64748b' }
 
 export default function DriverChart({ data }: DriverChartProps) {
+  // Reduced visual weight: use gray instead of blue
   return (
     <ResponsiveContainer width="100%" height="100%">
       <BarChart
@@ -23,7 +24,7 @@ export default function DriverChart({ data }: DriverChartProps) {
           tick={axisStyle}
         />
         <Tooltip content={<CustomTooltip titleKey="fullName" />} />
-        <Bar dataKey="count" fill="#3b82f6" radius={[0, 4, 4, 0]} />
+        <Bar dataKey="count" fill="#d1d5db" radius={[0, 4, 4, 0]} />
       </BarChart>
     </ResponsiveContainer>
   )

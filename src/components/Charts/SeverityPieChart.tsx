@@ -6,10 +6,12 @@ interface SeverityPieChartProps {
   data: { riskLevel: RiskLevel; count: number }[]
 }
 
+// Weakened colors for overview (not alarm)
+// Low/Medium: lighter, High: reduced saturation
 const COLORS = {
-  Low: '#10b981', // green
-  Medium: '#f59e0b', // orange
-  High: '#ef4444', // red
+  Low: '#86efac', // lighter green
+  Medium: '#fcd34d', // lighter orange
+  High: '#f87171', // reduced saturation red
 }
 
 const axisStyle = { fontSize: 12, fill: '#64748b' }

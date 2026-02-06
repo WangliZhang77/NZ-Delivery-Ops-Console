@@ -20,9 +20,9 @@ const getCellStyle = (riskLevel: RiskLevel, value: number) => {
   }
 
   if (riskLevel === 'High') {
-    // Red gradient based on value intensity
+    // High: more visible red gradient
     const intensity = Math.min(value / 10, 1) // Normalize to 0-1, cap at 10
-    const opacity = 0.1 + intensity * 0.5 // 0.1 to 0.6 opacity
+    const opacity = 0.15 + intensity * 0.5 // 0.15 to 0.65 opacity (more visible)
     return {
       backgroundColor: `rgba(239, 68, 68, ${opacity})`,
       color: value > 0 ? '#dc2626' : '#9ca3af',
@@ -41,11 +41,11 @@ const getCellStyle = (riskLevel: RiskLevel, value: number) => {
     }
   }
 
-  // Low
+  // Low: further weakened (lighter gray)
   const intensity = Math.min(value / 10, 1)
-  const opacity = 0.05 + intensity * 0.15
+  const opacity = 0.02 + intensity * 0.1 // Even lighter
   return {
-    backgroundColor: `rgba(156, 163, 175, ${opacity})`,
+    backgroundColor: `rgba(209, 213, 219, ${opacity})`, // Lighter gray
     color: value > 0 ? '#9ca3af' : '#9ca3af',
     fontWeight: value > 0 ? 400 : 400,
   }
